@@ -8,7 +8,10 @@ PII_PATTERNS: dict[str, str] = {
     "phone_vn": r"(?<!\d)(?:\+84|0)(?:[ .-]?\d){9}(?!\d)",
     "cccd": r"\b\d{12}\b",
     "credit_card": r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b",
-    # TODO: Add more patterns (e.g., Passport, Vietnamese address keywords)
+    # Passport identifiers commonly appear after an explicit label.
+    "passport": r"(?i)\bpassport\s*[:#]?\s*[A-Z]\d{7,8}\b",
+    # Scrub address values after common Vietnamese address labels.
+    "vn_address": r"(?i)\b(?:địa chỉ|dia chi|address)\s*[:=]\s*[^,;\n]{5,100}",
 }
 
 
@@ -17,6 +20,22 @@ def scrub_text(text: str) -> str:
     for name, pattern in PII_PATTERNS.items():
         safe = re.sub(pattern, f"[REDACTED_{name.upper()}]", safe)
     return safe
+
+
+def scrub_event(_: object, __: str, event_dict: dict) -> dict:
+    """Scrub every string recursively before logs reach any output processor."""
+    def clean(value):
+        if isinstance(value, str):
+            return scrub_text(value)
+        if isinstance(value, dict):
+            return {key: clean(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [clean(item) for item in value]
+        if isinstance(value, tuple):
+            return tuple(clean(item) for item in value)
+        return value
+
+    return clean(event_dict)
 
 
 def summarize_text(text: str, max_len: int = 80) -> str:

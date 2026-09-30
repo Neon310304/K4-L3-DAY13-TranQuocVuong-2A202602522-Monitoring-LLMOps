@@ -3,6 +3,8 @@ from __future__ import annotations
 from contextlib import contextmanager
 
 from app import agent as agent_module
+from app.mock_llm import FakeLLM
+from app.mock_rag import retrieve
 
 
 class ManagedPrompt:
@@ -20,6 +22,7 @@ class RecordingLangfuseClient:
     def __init__(self) -> None:
         self.prompt = ManagedPrompt()
         self.span_updates: list[dict] = []
+        self.generation_updates: list[dict] = []
 
     def get_prompt(self, name: str, **kwargs):
         return self.prompt
@@ -27,8 +30,13 @@ class RecordingLangfuseClient:
     def update_current_span(self, **kwargs) -> None:
         self.span_updates.append(kwargs)
 
+    def update_current_generation(self, **kwargs) -> None:
+        self.generation_updates.append(kwargs)
+
 
 def test_agent_records_prompt_version_with_v4_observation_api(monkeypatch) -> None:
+    assert hasattr(retrieve, "__wrapped__")
+    assert hasattr(FakeLLM.generate, "__wrapped__")
     monkeypatch.setenv("LANGFUSE_PROMPT_NAME", "day13-chat")
     monkeypatch.setenv("LANGFUSE_PROMPT_LABEL", "production")
     client = RecordingLangfuseClient()
@@ -67,3 +75,11 @@ def test_agent_records_prompt_version_with_v4_observation_api(monkeypatch) -> No
     assert span_update["version"] == "3"
     assert propagated[0]["metadata"]["correlation_id"] == "req-12345678"
     assert propagated[-1]["prompt"] is client.prompt
+    generation_update = client.generation_updates[-1]
+    assert generation_update["model"] == agent.model
+    assert generation_update["usage_details"]["input"] > 0
+    assert generation_update["usage_details"]["output"] > 0
+    assert generation_update["cost_details"]["total"] > 0
+    assert generation_update["prompt"] is client.prompt
+    assert generation_update["metadata"]["prompt_label"] == "production"
+    assert generation_update["metadata"]["prompt_version"] == "3"

@@ -12,6 +12,8 @@ Docs={{docs}}
 Question={{message}}
 ```
 
+Hai nội dung mẫu đã chuẩn bị tại [`prompts/day13-chat-v1.txt`](../prompts/day13-chat-v1.txt) và [`prompts/day13-chat-v2.txt`](../prompts/day13-chat-v2.txt). V1 khớp template fallback trong app; V2 chỉ thêm yêu cầu trả lời ngắn bằng tiếng Việt. Copy nguyên nội dung từng file khi tạo hai version trong project cá nhân. File local không tự tạo version trên Langfuse và không thay thế evidence từ project.
+
 App lấy prompt theo hai biến môi trường:
 
 ```dotenv

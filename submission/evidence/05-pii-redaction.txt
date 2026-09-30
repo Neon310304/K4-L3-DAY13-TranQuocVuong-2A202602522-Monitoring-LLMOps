@@ -1,0 +1,12 @@
+CP1 redaction evidence from fresh data/logs.jsonl after API restart.
+Six API requests used fabricated PII examples; these are the actual sanitized JSON log events.
+
+{"service":"api","payload":{"message_preview":"PII email: [REDACTED_EMAIL]"},"event":"request_received","session_id":"34655f39a656","correlation_id":"req-26d23dad","user_id_hash":"cebf292c038f","env":"dev","feature":"qa","model":"claude-sonnet-4-5","level":"info","ts":"2026-09-30T16:11:42.788817Z"}
+{"service":"api","payload":{"message_preview":"PII phone: [REDACTED_PHONE_VN]"},"event":"request_received","session_id":"34655f39a656","correlation_id":"req-2a886a51","user_id_hash":"cebf292c038f","env":"dev","feature":"qa","model":"claude-sonnet-4-5","level":"info","ts":"2026-09-30T16:11:42.948411Z"}
+{"service":"api","payload":{"message_preview":"PII cccd: [REDACTED_CCCD]"},"event":"request_received","session_id":"34655f39a656","correlation_id":"req-9cf844fe","user_id_hash":"cebf292c038f","env":"dev","feature":"qa","model":"claude-sonnet-4-5","level":"info","ts":"2026-09-30T16:11:43.116379Z"}
+{"service":"api","payload":{"message_preview":"PII card: [REDACTED_CREDIT_CARD]"},"event":"request_received","session_id":"34655f39a656","correlation_id":"req-ab5eb22a","user_id_hash":"cebf292c038f","env":"dev","feature":"qa","model":"claude-sonnet-4-5","level":"info","ts":"2026-09-30T16:11:43.274213Z"}
+{"service":"api","payload":{"message_preview":"PII passport: [REDACTED_PASSPORT]"},"event":"request_received","session_id":"34655f39a656","correlation_id":"req-94389ada","user_id_hash":"cebf292c038f","env":"dev","feature":"qa","model":"claude-sonnet-4-5","level":"info","ts":"2026-09-30T16:11:43.437947Z"}
+{"service":"api","payload":{"message_preview":"PII [REDACTED_VN_ADDRESS]"},"event":"request_received","session_id":"34655f39a656","correlation_id":"req-944e88d4","user_id_hash":"cebf292c038f","env":"dev","feature":"qa","model":"claude-sonnet-4-5","level":"info","ts":"2026-09-30T16:11:43.596602Z"}
+
+Log validator: 37 records, 18 unique correlation IDs, 0 missing fields,
+0 missing enrichment, 0 potential PII leaks, estimated score 100/100.

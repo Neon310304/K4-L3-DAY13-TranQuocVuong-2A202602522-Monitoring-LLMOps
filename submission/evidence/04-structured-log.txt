@@ -1,0 +1,7 @@
+CP1 structured log evidence from fresh data/logs.jsonl after API restart.
+The two actual JSON events share one correlation_id.
+Header check: generated x-request-id=req-c932973a, body_match=True, x-response-time-ms=156.01.
+Forwarded header check: x-request-id=req-abcdef12, body_match=True, x-response-time-ms=155.88.
+
+{"service":"api","payload":{"message_preview":"What is your refund policy? My email is [REDACTED_EMAIL]"},"event":"request_received","session_id":"fb173a948cf4","correlation_id":"req-229c760a","user_id_hash":"2055254ee30a","env":"dev","feature":"qa","model":"claude-sonnet-4-5","level":"info","ts":"2026-09-30T16:10:51.773719Z"}
+{"service":"api","latency_ms":152,"ttft_ms":50,"tokens_in":36,"tokens_out":151,"cost_usd":0.002373,"quality_score":0.9,"tool_name":"retrieval","tool_success":true,"payload":{"answer_preview":"Starter answer. You should improve this output logic and add better quality chec..."},"event":"response_sent","session_id":"fb173a948cf4","correlation_id":"req-229c760a","user_id_hash":"2055254ee30a","env":"dev","feature":"qa","model":"claude-sonnet-4-5","level":"info","ts":"2026-09-30T16:10:52.971683Z"}

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day 13 · Monitoring & LLMOps</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, Segoe UI, Arial, sans-serif; background: #0b1020; color: #e9eefb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 82% -10%, #223c65 0, transparent 34%), #0b1020; }
+    main { max-width: 1500px; margin: auto; padding: 34px 30px 50px; }
+    header { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 28px; }
+    .eyebrow { color: #79d7c8; text-transform: uppercase; font-size: 12px; letter-spacing: .18em; font-weight: 700; }
+    h1 { font-size: clamp(28px, 3vw, 42px); margin: 8px 0 7px; letter-spacing: -.04em; }
+    .subtitle { margin: 0; color: #a4b1cc; font-size: 14px; }
+    .status { text-align: right; color: #b6c2d9; font-size: 13px; line-height: 1.8; }
+    .status strong { color: #e9eefb; }
+    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #66d8aa; margin-right: 6px; box-shadow: 0 0 10px #66d8aa; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .panel { min-width: 0; min-height: 320px; background: linear-gradient(160deg, #17223a, #111a2e); border: 1px solid #2a3956; border-radius: 16px; padding: 20px 22px 16px; box-shadow: 0 16px 40px #03081540; }
+    .panel-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+    .panel h2 { font-size: 18px; margin: 0; letter-spacing: -.02em; }
+    .unit { color: #94a8c8; border: 1px solid #354664; border-radius: 6px; padding: 4px 7px; font-size: 11px; white-space: nowrap; }
+    .threshold { margin-top: 7px; color: #9badc9; font-size: 12px; }
+    .metrics { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .metric { min-width: 100px; flex: 1; border: 1px solid #293a57; background: #0e182c; border-radius: 9px; padding: 9px 11px; }
+    .metric-label { color: #93a6c5; font-size: 11px; white-space: nowrap; }
+    .metric-value { margin-top: 4px; font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums; }
+    .chart { margin-top: 12px; height: 143px; }
+    svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .axis { color: #8e9fba; font-size: 10px; display: flex; justify-content: space-between; margin-top: 2px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 9px; color: #a8b8d0; font-size: 11px; }
+    .legend i { display: inline-block; width: 13px; height: 3px; margin-right: 5px; vertical-align: 3px; border-radius: 2px; }
+    .error-types { color: #a8b8d0; font-size: 11px; margin-top: 7px; min-height: 15px; }
+    .empty { color: #95a6c2; padding: 51px 0; text-align: center; font-size: 13px; }
+    footer { color: #7385a5; font-size: 12px; margin-top: 18px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } header { align-items: start; flex-direction: column; } .status { text-align: left; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <div class="eyebrow">K4-L3B · Operations</div>
+        <h1>Monitoring & LLMOps</h1>
+        <p class="subtitle">Metrics → Logs → Traces · Nguồn dữ liệu: <code>data/logs.jsonl</code></p>
+      </div>
+      <div class="status"><div><span class="dot"></span><strong>Live dashboard</strong></div><div id="window">60 phút gần nhất · UTC</div><div id="updated">Đang tải dữ liệu…</div></div>
+    </header>
+    <div class="grid" id="grid"></div>
+    <footer>Đường nét đứt biểu thị ngưỡng từ config/dashboard.yaml. Dữ liệu được làm mới mỗi 30 giây.</footer>
+  </main>
+  <script>
+    const ids = ["latency", "traffic", "errors", "cost", "tokens", "quality"];
+    const colors = ["#62d3ca", "#7e9cff", "#f5ae69", "#cb92f3"];
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[char]);
+    const number = value => value == null ? "—" : Number(value).toLocaleString("en-US", { maximumFractionDigits: 4 });
+    const metricValue = (id, key, value) => {
+      if (value == null) return "—";
+      if (id === "cost") return "$" + Number(value).toFixed(value < 0.01 ? 5 : 3);
+      if (id === "quality" && key === "Average") return Number(value).toFixed(2);
+      if (id === "errors" && key !== "Failures") return Number(value).toFixed(1) + "%";
+      return number(value);
+    };
+    const timeLabel = iso => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+
+    function chartSvg(id, panel, timestamps) {
+      const width = 620, height = 130, left = 9, right = 10, top = 10, bottom = 10;
+      const drawableHeight = height - top - bottom;
+      const values = panel.series.flatMap(series => series.values.filter(value => value != null && Number.isFinite(Number(value))).map(Number));
+      if (!values.length) return '<div class="empty">Chưa có dữ liệu trong 60 phút gần nhất</div>';
+      const threshold = Number(panel.threshold.value);
+      const extraThreshold = id === "errors" ? Number(panel.retrieval_threshold) : null;
+      const max = Math.max(1, ...values, threshold, ...(extraThreshold == null ? [] : [extraThreshold])) * 1.08;
+      const x = i => left + i / Math.max(1, timestamps.length - 1) * (width - left - right);
+      const y = value => top + drawableHeight - Number(value) / max * drawableHeight;
+      const grid = [0, .5, 1].map(fraction => `<line x1="${left}" y1="${y(max * fraction)}" x2="${width - right}" y2="${y(max * fraction)}" stroke="#34445d" stroke-width="1" opacity=".55"/>`).join("");
+      const rules = [{ value: threshold, color: "#fb8888", label: "Threshold" }];
+      if (extraThreshold != null) rules.push({ value: extraThreshold, color: "#dfb377", label: "Retrieval min" });
+      const ruleSvg = rules.map(rule => `<line x1="${left}" y1="${y(rule.value)}" x2="${width - right}" y2="${y(rule.value)}" stroke="${rule.color}" stroke-dasharray="5 5" stroke-width="1.4"/><text x="${width - right - 3}" y="${Math.max(9, y(rule.value) - 4)}" text-anchor="end" fill="${rule.color}" font-size="10">${escapeHtml(rule.label)} ${number(rule.value)}</text>`).join("");
+      const seriesSvg = panel.series.map((series, seriesIndex) => {
+        const color = colors[seriesIndex % colors.length];
+        let path = "", started = false;
+        const dots = [];
+        series.values.forEach((value, i) => {
+          if (value == null) { started = false; return; }
+          path += `${started ? "L" : "M"}${x(i).toFixed(1)},${y(value).toFixed(1)} `;
+          started = true;
+          dots.push(`<circle cx="${x(i).toFixed(1)}" cy="${y(value).toFixed(1)}" r="2.4" fill="${color}"><title>${escapeHtml(series.name)} · ${timeLabel(timestamps[i])}: ${number(value)}</title></circle>`);
+        });
+        return `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>${dots.join("")}`;
+      }).join("");
+      return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(panel.title)} chart">${grid}${ruleSvg}${seriesSvg}</svg>`;
+    }
+
+    function render(data) {
+      document.getElementById("window").textContent = `${data.window_minutes} phút gần nhất · UTC`;
+      document.getElementById("updated").textContent = `Cập nhật ${timeLabel(data.generated_at)} UTC`;
+      const grid = document.getElementById("grid");
+      grid.innerHTML = ids.map(id => {
+        const panel = data.panels[id];
+        const metrics = Object.entries(panel.metrics).map(([key, value]) => `<div class="metric"><div class="metric-label">${escapeHtml(key)}</div><div class="metric-value">${escapeHtml(metricValue(id, key, value))}</div></div>`).join("");
+        const symbol = panel.threshold.operator === "lte" ? "≤" : "≥";
+        const threshold = `Ngưỡng ${escapeHtml(panel.threshold.aggregation)} ${symbol} ${number(panel.threshold.value)} ${escapeHtml(panel.unit)}`;
+        const legend = panel.series.map((series, index) => `<span><i style="background:${colors[index % colors.length]}"></i>${escapeHtml(series.name)}</span>`).join("");
+        const breakdown = id === "errors" ? `<div class="error-types">Loại lỗi: ${Object.keys(panel.error_types).length ? escapeHtml(Object.entries(panel.error_types).map(([name, count]) => `${name} ${count}`).join(" · ")) : "không có"}</div>` : "";
+        return `<section class="panel" id="panel-${id}"><div class="panel-head"><div><h2>${escapeHtml(panel.title)}</h2><div class="threshold">${threshold}</div></div><span class="unit">${escapeHtml(panel.unit)}</span></div><div class="metrics">${metrics}</div><div class="chart">${chartSvg(id, panel, data.timestamps)}</div><div class="axis"><span>${timeLabel(data.timestamps[0])}</span><span>${timeLabel(data.timestamps[data.timestamps.length - 1])}</span></div><div class="legend">${legend}</div>${breakdown}</section>`;
+      }).join("");
+    }
+
+    async function refresh() {
+      try {
+        const response = await fetch("/dashboard/data", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        render(await response.json());
+      } catch (error) {
+        document.getElementById("updated").textContent = `Không tải được dữ liệu: ${error.message}`;
+      }
+    }
+    refresh();
+    setInterval(refresh, 30000);
+  </script>
+</body>
+</html>

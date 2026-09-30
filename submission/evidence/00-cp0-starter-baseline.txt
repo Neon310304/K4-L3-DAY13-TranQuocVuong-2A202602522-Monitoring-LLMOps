@@ -1,0 +1,28 @@
+CP0 starter baseline, reconstructed from committed HEAD 2073168 on 2026-09-30.
+Method: git worktree at HEAD, separate ignored .env with empty Langfuse keys,
+API on 127.0.0.1:8014, sample_queries.jsonl sent to /chat.
+The temporary worktree was removed after recording this output.
+
+GET /health
+{"ok":true,"tracing_enabled":false,"incidents":{"rag_slow":false,"tool_fail":false,"cost_spike":false}}
+
+10 API responses were confirmed by Invoke-RestMethod. An earlier Invoke-WebRequest
+client call raised a PowerShell NullReferenceException after sending requests;
+therefore the log file contains 20 request pairs, not just the confirmed 10.
+Starter responses used correlation_id=MISSING.
+
+python scripts/validate_logs.py
+Total log records analyzed: 42
+Records with missing required fields: 40
+Records with missing enrichment (context): 40
+Unique correlation IDs found: 0
+Potential PII leaks detected: 0
+Estimated Score: 30/100
+
+python scripts/validate_dashboard.py
+HỢP LỆ: 6/6 panel có trong dashboard contract.
+
+python -m pytest -q
+22 passed in 3.52s
+
+Langfuse trace baseline could not be captured: personal project credentials were not configured.

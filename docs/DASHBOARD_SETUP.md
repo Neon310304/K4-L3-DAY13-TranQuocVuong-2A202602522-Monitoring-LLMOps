@@ -12,7 +12,7 @@ Lab không bắt buộc một công cụ dashboard cụ thể. Bạn có thể d
 |---|---|---|
 | Latency | `response_sent.latency_ms/ttft_ms` | latency P50/P95/P99 và TTFT P95 |
 | Traffic | `request_received` | count, request/phút |
-| Errors | `request_received`, `request_failed`, `error_type`, `tool_success` | error rate, breakdown và retrieval success |
+| Errors | `request_received`, `response_sent`, `request_failed`, `error_type`, `tool_success` | error rate, breakdown và retrieval success trên mọi event có `tool_success` |
 | Cost | `response_sent.cost_usd` | tổng theo phút và toàn cửa sổ |
 | Tokens | `response_sent.tokens_in/tokens_out` | tổng theo từng field |
 | Quality | `response_sent.quality_score` | mean |
@@ -23,7 +23,7 @@ Giữ time range mặc định 60 phút, refresh 30 giây và hiển thị thres
 
 1. Hoàn thiện logging/PII và chạy API.
 2. Chạy `python scripts/load_test.py --concurrency 5` để tạo baseline.
-3. Dùng `data/logs.jsonl` làm nguồn chuẩn để tạo đúng sáu panel bằng Streamlit, notebook, Grafana hoặc công cụ tương đương. Langfuse vẫn là nơi mở trace/prompt version để điều tra sâu.
+3. Mở dashboard local tích hợp tại `http://127.0.0.1:8000/dashboard` (hoặc cổng đang chạy API, ví dụ `8013`). Endpoint `/dashboard/data` đọc `data/logs.jsonl` và tổng hợp theo cửa sổ 60 phút. Langfuse vẫn là nơi mở trace/prompt version để điều tra sâu.
 4. Đặt tên panel, đơn vị và threshold giống contract.
 5. Chạy validator:
 

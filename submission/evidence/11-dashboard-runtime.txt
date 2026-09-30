@@ -1,0 +1,26 @@
+CP2 dashboard runtime data from GET /dashboard/data
+Source: data/logs.jsonl
+Generated at: 2026-09-30T16:40:50.253462+00:00
+Window: 60 minutes; refresh: 30 seconds
+Panel count: 6
+
+latency: Latency percentiles and TTFT
+  unit=ms; threshold=p95 lte 3000
+  metrics={'P50': 152.0, 'P95': 156.0, 'P99': 156.0, 'TTFT P95': 50.0}
+traffic: Request traffic
+  unit=requests_per_minute; threshold=rate_per_minute gte 1
+  metrics={'Requests': 19, 'Average/min': 0.32}
+errors: Error rate and retrieval success
+  unit=percent; threshold=error_rate_pct lte 2
+  metrics={'Error rate': 0.0, 'Retrieval success': 100.0, 'Failures': 0}
+cost: Cost over time
+  unit=usd; threshold=total lte 2.5
+  metrics={'Total': 0.039162, 'Average/request': 0.002061}
+tokens: Input and output tokens
+  unit=tokens; threshold=sum_by_field lte 50000
+  metrics={'Input': 589, 'Output': 2493, 'Total': 3082}
+quality: Quality proxy
+  unit=score_0_to_1; threshold=mean gte 0.75
+  metrics={'Average': 0.8421, 'Responses': 19}
+
+This is runtime text data, not a screenshot. Capture /dashboard for the required image evidence.

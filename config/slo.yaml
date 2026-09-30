@@ -7,7 +7,15 @@ primary_slo:
     total_event: 'event == "request_received"'
   target_percent: 99.5
   error_budget_percent: 0.5
-  note: Học viên phải giải thích hoặc điều chỉnh ngưỡng bằng baseline của mình. Ví dụ nếu có 10,000 request trong cửa sổ 28 ngày, error budget 0.5% nghĩa là tối đa 50 request được phép không đạt SLO.
+  baseline_p95_ms: 152
+  baseline_ttft_p95_ms: 50
+  example_total_requests: 10000
+  example_allowed_bad_requests: 50
+  note: >-
+    CP0 local baseline có P95 152 ms và TTFT P95 50 ms trên 10 request.
+    Chọn ngưỡng 3000 ms để phát hiện request chậm rõ rệt và giữ cùng ngưỡng
+    với dashboard/alert. Trong 28 ngày, SLO 99.5% cho phép 0.5% request
+    lỗi hoặc vượt 3000 ms; 10000 request tương ứng tối đa 50 request xấu.
 guardrails:
   error_rate_pct_max: 2
   daily_cost_usd_max: 2.5

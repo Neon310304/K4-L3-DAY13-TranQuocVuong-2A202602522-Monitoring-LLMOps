@@ -38,14 +38,15 @@ class LabAgent:
         correlation_id: str,
     ) -> AgentResult:
         langfuse_client = get_langfuse_client()
+        safe_feature = summarize_text(feature, max_len=40)
         with propagate_attributes(
             user_id=hash_user_id(user_id),
-            session_id=session_id,
-            tags=["lab", feature, self.model],
+            session_id=hash_user_id(session_id),
+            tags=["lab", safe_feature, self.model],
             trace_name="day13-agent-request",
             environment=os.getenv("APP_ENV", "dev"),
             metadata={
-                "feature": feature,
+                "feature": safe_feature,
                 "model": self.model,
                 "correlation_id": correlation_id,
             },
@@ -71,10 +72,15 @@ class LabAgent:
                 },
                 version=prompt.version,
             )
-            # TODO (CP2): instrument retrieve() and FakeLLM.generate() as child
-            # observations. The nested generation must receive prompt, usage and cost.
             with propagate_attributes(prompt=prompt.managed_prompt):
-                response = self.llm.generate(prompt.text)
+                response = self.llm.generate(
+                    prompt.text,
+                    langfuse_client=langfuse_client,
+                    managed_prompt=prompt.managed_prompt,
+                    prompt_name=prompt.name,
+                    prompt_label=prompt.label,
+                    prompt_version=prompt.version,
+                )
             quality_score = self._heuristic_quality(message, response.text, docs)
             latency_ms = int((time.perf_counter() - started) * 1000)
             cost_usd = self._estimate_cost(response.usage.input_tokens, response.usage.output_tokens)

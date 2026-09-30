@@ -1,0 +1,5 @@
+Feature={{feature}}
+Docs={{docs}}
+Question={{message}}
+
+Answer in Vietnamese in no more than three concise sentences. Use the supplied docs when relevant.

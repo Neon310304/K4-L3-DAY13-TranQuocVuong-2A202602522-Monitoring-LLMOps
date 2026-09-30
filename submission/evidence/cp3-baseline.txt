@@ -1,0 +1,16 @@
+CP3 clean baseline before official challenge
+Generated at: 2026-09-30T16:50:45.828276+00:00
+Window: 60 minutes (UTC)
+API: http://127.0.0.1:8013 (no --reload)
+Health: {'ok': True, 'tracing_enabled': False, 'incidents': {'rag_slow': False, 'tool_fail': False, 'cost_spike': False}}
+Source: data/logs.jsonl via /dashboard/data; latency is server-side latency_ms.
+
+latency: {'P50': 151.0, 'P95': 154.0, 'P99': 154.0, 'TTFT P95': 50.0}
+traffic: {'Requests': 10, 'Average/min': 0.17}
+errors: {'Error rate': 0.0, 'Retrieval success': 100.0, 'Failures': 0}
+cost: {'Total': 0.020274, 'Average/request': 0.002027}
+tokens: {'Input': 338, 'Output': 1284, 'Total': 1622}
+quality: {'Average': 0.88, 'Responses': 10}
+
+All 10 sample requests returned HTTP 200. No challenge incident was enabled.
+This is baseline text evidence; official incident metric/log/trace evidence is pending Lab Coach release.
